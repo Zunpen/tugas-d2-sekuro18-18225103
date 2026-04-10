@@ -24,32 +24,19 @@ Sistem ini menggunakan node **Priority Mux** untuk menentukan prioritas input ya
 ## Diagram Sistem
 
 ```
-            +---------------------------+
-            |  auto_mode_destroyer      |
-            +---------------------------+
-                        |
-                        v
-                /autonomous_destroyer
-                        |
-                        |
-+----------------+      v       +------------------------+
-| drive_mode_    | --->(MUX)--> | check_move_destroyer |
-| destroyer      |              +------------------------+
-+----------------+                       |
-        |                                v
-        |                        /power_destroyer
-        |                                |
-        |                                v
-        |                        +------------------+
-        |                        | move_destroyer   |
-        |                        +------------------+
-        |
-        +----> /drive_destroyer
+[drive_mode_destroyer] ---> (/drive_destroyer) ----\
+                                                    \
+                                                     > [priority_mux_destroyer]
+                                                    /
+[auto_mode_destroyer] ---> (/autonomous_destroyer) /
+
+[priority_mux_destroyer] ---> (/power_destroyer) ---> [move_destroyer]
+                        ---> (/move_type) ---------> [move_destroyer]
 ```
 
 **Penjelasan:**
 
-* Node **check_move_destroyer** memilih antara input manual dan autonomous dengan prioritas di drive_mode_destroyer
+* Node **priority_mux_destroyer** memilih antara input manual dan autonomous dengan prioritas di drive_mode_destroyer
 * Jika tidak ada input dalam waktu tertentu, sistem akan idle
 * Output dikirim ke **move_destroyer** untuk menentukan arah roda
 
