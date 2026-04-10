@@ -1,41 +1,35 @@
-# Prerequisites
-*.d
+# ROS2 build artifacts
+build/
+install/
+log/
 
-# Compiled Object files
-*.slo
-*.lo
+# Colcon cache
+.colcon/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Compiled files
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
 *.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
 *.a
-*.lib
 
-# Executables
-*.exe
-*.out
-*.app
+# IDE
+.vscode/
+.idea/
 
-# debug information files
-*.dwo
+# Python cache 
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
+*.swp
