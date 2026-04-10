@@ -30,15 +30,19 @@ public:
 
 private:
     void auto_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-        last_auto_msg_ = *msg;
-        auto_received_ = true;
-    }
+    last_auto_msg_ = *msg;
+    auto_received_ = true;
 
-    void drive_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-        last_drive_msg_ = *msg;
-        last_drive_time_ = this->now();
-        drive_received_ = true;
-    }
+    RCLCPP_INFO(this->get_logger(), "Received from Autonomous: linear.x = %.2f, linear.y = %2.f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
+}
+
+void drive_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+    last_drive_msg_ = *msg;
+    last_drive_time_ = this->now();
+    drive_received_ = true;
+
+    RCLCPP_INFO(this->get_logger(), "Received from Driver: linear.x = %.2f, linear.y = %2.f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
+}
 
     void update() {
         geometry_msgs::msg::Twist output;
