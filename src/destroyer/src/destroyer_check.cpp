@@ -6,8 +6,8 @@ using std::placeholders::_1;
 
 class PriorityMux : public rclcpp::Node {
 public:
-    PriorityMux() : Node("priority_mux_destroyer") {
-
+    PriorityMux() : Node("priority_mux_destroyer"), timeout_(rclcpp::Duration::from_seconds(2.0))
+    {
         sub_auto_ = this->create_subscription<geometry_msgs::msg::Twist>(
             "/autonomous_destroyer", 10,
             std::bind(&PriorityMux::auto_callback, this, _1));
@@ -26,13 +26,9 @@ public:
             std::chrono::milliseconds(100),
             std::bind(&PriorityMux::update, this));
 
-        timeout_ = rclcpp::Duration::from_seconds(2.0);
-
-        RCLCPP_INFO(this->get_logger(), "Priority MUX started");
     }
 
 private:
-
     void auto_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         last_auto_msg_ = *msg;
         auto_received_ = true;
@@ -46,7 +42,7 @@ private:
 
     void update() {
         geometry_msgs::msg::Twist output;
-        std::string mode = "None";
+        std::string mode = "Idle";
 
         bool driver_active = drive_received_ &&
             ((this->now() - last_drive_time_) < timeout_);
@@ -66,6 +62,7 @@ private:
         msg_type.data = mode;
         pub_type_->publish(msg_type);
     }
+
     geometry_msgs::msg::Twist last_auto_msg_;
     geometry_msgs::msg::Twist last_drive_msg_;
 
