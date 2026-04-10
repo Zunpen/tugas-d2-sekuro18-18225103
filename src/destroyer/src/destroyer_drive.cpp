@@ -23,79 +23,103 @@ char getch() {
 class DestroyerDrive : public rclcpp::Node
 {
 public:
-  DestroyerDrive() : Node("drive_mode_destroyer")
-  {
+DestroyerDrive() : Node("drive_mode_destroyer")
+{
     publisher_drive_ = this->create_publisher<geometry_msgs::msg::Twist>("drive_destroyer", 10);
     RCLCPP_INFO(this->get_logger(), "Panah: Maju/Mundur/Kiri/Kanan (5 m/s)");
     RCLCPP_INFO(this->get_logger(), "R/L  : Rotasi Kanan/Kiri (1 rad/s)");
     RCLCPP_INFO(this->get_logger(), "B: Rem/Berhenti");
-  }
+}
 
-  void run_keyboard_loop() {
-      while (rclcpp::ok()) {
-          char c = getch();
-          auto msg = geometry_msgs::msg::Twist();
-          bool valid_key = false;
+void run_keyboard_loop() {
+    double vx = 0.0;
+    double vy = 0.0;
+    double wz = 0.0;
 
-          if (c == '\x1B') { 
-              char seq1 = getch();
-              char seq2 = getch();
-              
-              if (seq1 == '[') {
-                  switch(seq2) {
-                      case 'A': // Panah Atas
-                          msg.linear.x = 5.0; valid_key = true; break;
-                      case 'B': // Panah Bawah
-                          msg.linear.x = -5.0; valid_key = true; break;
-                      case 'C': // Panah Kanan
-                          msg.linear.y = -5.0; valid_key = true; break;
-                      case 'D': // Panah Kiri
-                          msg.linear.y = 5.0; valid_key = true; break;
-                  }
-              }
-          } 
-          else {
-                //Rotasi kanan
-              if (c == 'r' || c == 'R') {
-                  msg.angular.z = -1.0; 
-                  valid_key = true;
-              } 
-                //Rotasi kiri
-              else if (c == 'l' || c == 'L') {
-                  msg.angular.z = 1.0;  
-                  valid_key = true;
-              } 
-                //Rem/Berhenti
-              else if (c == 'b' || c == 'B') { 
-                  msg.linear.x = 0.0;
-                  msg.linear.y = 0.0;
-                  msg.angular.z = 0.0;
-                  valid_key = true;
-              }
-                //Keluar dari loop jika tombol Ctrl+C ditekan
-              else if (c == '\x03') {
-                  break;
-              }
-          }
+    const double LIN = 5.0;
+    const double ANG = 1.0;
 
-          if (valid_key) {
-              publisher_drive_->publish(msg);
-          }
-      }
-  }
+    while (rclcpp::ok()) {
+        char c = getch();
+        bool updated = false;
+
+        if (c == '\x1B') { 
+            char seq1 = getch();
+            char seq2 = getch();
+            
+            if (seq1 == '[') {
+                switch(seq2) {
+                    case 'A': 
+                        vx += LIN;
+                        updated = true;
+                        break;
+                    case 'B': 
+                        vx -= LIN;
+                        updated = true;
+                        break;
+                    case 'C': 
+                        vy -= LIN;
+                        updated = true;
+                        break;
+                    case 'D':
+                        vy += LIN;
+                        updated = true;
+                        break;
+                }
+            }
+        } 
+        else {
+            if (c == 'r' || c == 'R') {
+                wz -= ANG;
+                updated = true;
+            } 
+            else if (c == 'l' || c == 'L') {
+                wz += ANG;
+                updated = true;
+            } 
+            else if (c == 'b' || c == 'B') {
+                vx = 0.0;
+                vy = 0.0;
+                wz = 0.0;
+                updated = true;
+            }
+            else if (c == '\x03') {
+                break;
+            }
+        }
+
+        vx = std::max(-5.0, std::min(5.0, vx));
+        vy = std::max(-5.0, std::min(5.0, vy));
+        wz = std::max(-1.0, std::min(1.0, wz));
+
+        double speed = std::sqrt(vx * vx + vy * vy);
+        if (speed > 5.0) {
+            vx = (vx / speed) * 5.0;
+            vy = (vy / speed) * 5.0;
+        }
+
+        if (updated) {
+            auto msg = geometry_msgs::msg::Twist();
+            msg.linear.x = vx;
+            msg.linear.y = vy;
+            msg.angular.z = wz;
+
+            publisher_drive_->publish(msg);
+        }
+    }
+}
 
 private:
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_drive_;
+rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_drive_;
 };
 
 int main(int argc, char * argv[])
 {
-  rclcpp::init(argc, argv);
-  
-  auto node = std::make_shared<DestroyerDrive>();
-  //ganti void loop dari ros2 dengan loop untuk membaca input keyboard
-  node->run_keyboard_loop();
-  
-  rclcpp::shutdown();
-  return 0;
+rclcpp::init(argc, argv);
+
+auto node = std::make_shared<DestroyerDrive>();
+node->run_keyboard_loop();
+
+rclcpp::shutdown();
+return 0;
 }

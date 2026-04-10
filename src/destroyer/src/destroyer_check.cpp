@@ -8,54 +8,47 @@ class PriorityMux : public rclcpp::Node {
 public:
     PriorityMux() : Node("priority_mux_destroyer"), timeout_(rclcpp::Duration::from_seconds(2.0))
     {
-        sub_auto_ = this->create_subscription<geometry_msgs::msg::Twist>(
-            "/autonomous_destroyer", 10,
-            std::bind(&PriorityMux::auto_callback, this, _1));
+        sub_auto_ = this->create_subscription<geometry_msgs::msg::Twist>("/autonomous_destroyer", 10, std::bind(&PriorityMux::auto_callback, this, _1));
 
-        sub_drive_ = this->create_subscription<geometry_msgs::msg::Twist>(
-            "/drive_destroyer", 10,
-            std::bind(&PriorityMux::drive_callback, this, _1));
+        sub_drive_ = this->create_subscription<geometry_msgs::msg::Twist>("/drive_destroyer", 10, std::bind(&PriorityMux::drive_callback, this, _1));
 
-        pub_power_ = this->create_publisher<geometry_msgs::msg::Twist>(
-            "/power_destroyer", 10);
+        pub_power_ = this->create_publisher<geometry_msgs::msg::Twist>("/power_destroyer", 10);
 
-        pub_type_ = this->create_publisher<std_msgs::msg::String>(
-            "/move_type", 10);
+        pub_type_ = this->create_publisher<std_msgs::msg::String>("/move_type", 10);
 
-        timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(100),
-            std::bind(&PriorityMux::update, this));
-
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(100), std::bind(&PriorityMux::update, this));
     }
 
 private:
     void auto_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-    last_auto_msg_ = *msg;
-    auto_received_ = true;
+        last_auto_msg_ = *msg;
+        last_auto_time_ = this->now();  
+        auto_received_ = true;
 
-    RCLCPP_INFO(this->get_logger(), "Received from Autonomous: linear.x = %.2f, linear.y = %2.f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
-}
+        RCLCPP_INFO(this->get_logger(), "Received from Autonomous: linear.x = %.2f, linear.y = %.2f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
+    }
 
-void drive_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-    last_drive_msg_ = *msg;
-    last_drive_time_ = this->now();
-    drive_received_ = true;
+    void drive_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+        last_drive_msg_ = *msg;
+        last_drive_time_ = this->now();
+        drive_received_ = true;
 
-    RCLCPP_INFO(this->get_logger(), "Received from Driver: linear.x = %.2f, linear.y = %2.f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
-}
+        RCLCPP_INFO(this->get_logger(), "Received from Driver: linear.x = %.2f, linear.y = %.2f, yaw = %.2f", msg->linear.x, msg->linear.y, msg->angular.z);
+    }
 
     void update() {
         geometry_msgs::msg::Twist output;
         std::string mode = "Idle";
 
-        bool driver_active = drive_received_ &&
-            ((this->now() - last_drive_time_) < timeout_);
+        bool driver_active = drive_received_ && ((this->now() - last_drive_time_) < timeout_);
+
+        bool auto_active = auto_received_ &&((this->now() - last_auto_time_) < timeout_);
 
         if (driver_active) {
             output = last_drive_msg_;
             mode = "Driver";
         }
-        else if (auto_received_) {
+        else if (auto_active) {
             output = last_auto_msg_;
             mode = "Autonomous";
         }
@@ -70,6 +63,7 @@ void drive_callback(const geometry_msgs::msg::Twist::SharedPtr msg) {
     geometry_msgs::msg::Twist last_auto_msg_;
     geometry_msgs::msg::Twist last_drive_msg_;
 
+    rclcpp::Time last_auto_time_; 
     rclcpp::Time last_drive_time_;
 
     bool auto_received_ = false;

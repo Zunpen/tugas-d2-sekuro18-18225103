@@ -18,16 +18,25 @@ public:
 
 private:
     void publish_msg() {
-        auto msg = geometry_msgs::msg::Twist();
+    auto msg = geometry_msgs::msg::Twist();
 
-        std::uniform_int_distribution<int> dist(0, 1);
-        msg.linear.x = dist(rng_) ? 5.0 : -5.0;
-        msg.linear.y = dist(rng_) ? 5.0 : -5.0;
-        msg.angular.z = 0.0;
+    std::uniform_real_distribution<double> angle_dist(0.0, 2.0 * M_PI);
+    double angle = angle_dist(rng_);
 
-        publisher_->publish(msg);
-        RCLCPP_INFO(this->get_logger(), "Publishing auto movement");
-    }
+    double speed = 5.0;
+
+    msg.linear.x = speed * std::cos(angle);
+    msg.linear.y = speed * std::sin(angle);
+
+    std::uniform_real_distribution<double> angular_dist(-1.0, 1.0);
+    msg.angular.z = angular_dist(rng_);
+
+    publisher_->publish(msg);
+
+    RCLCPP_INFO(this->get_logger(),
+        "Auto move -> vx: %.2f vy: %.2f wz: %.2f",
+        msg.linear.x, msg.linear.y, msg.angular.z);
+}
 
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
