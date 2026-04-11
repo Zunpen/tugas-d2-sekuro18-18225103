@@ -67,7 +67,7 @@ source install/setup.bash
 ### 2. Jalankan dengan Launch File (Switch On)
 
 ```bash
-ros2 launch destroyer switch_on.launch.py
+ros2 launch destroyer switch_on.py
 ```
 
 ---
