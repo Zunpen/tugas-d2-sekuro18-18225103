@@ -5,8 +5,7 @@
 ## 👤 Identitas Cakru
 
 * Nama: Muhammad Rizqi Azhar
-* Username: zunpen
-* NIM: (isi sesuai NIM kamu)
+* NIM: 18225103
 
 ---
 
